@@ -1,6 +1,5 @@
 import axios from "axios";
 import env from "@/config/env";
-import "./interceptors";
 
 const apiClient = axios.create({
   baseURL: env.API_BASE_URL,
@@ -8,5 +7,29 @@ const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+// Request interceptor (attach token automatically)
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+// Response interceptor (global error handling)
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default apiClient;
